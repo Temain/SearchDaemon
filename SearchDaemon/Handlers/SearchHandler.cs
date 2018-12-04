@@ -49,7 +49,8 @@ namespace SearchDaemon.Handlers
 
 			try
 			{
-				StartSearch();
+				TestSearch();
+				// StartSearch();
 			}
 			catch (Exception ex)
 			{
@@ -73,12 +74,8 @@ namespace SearchDaemon.Handlers
 				output.Add("Директория " + searchDirectory);
 				output.Add("Шаблон поиска " + _settings.SearchMask);
 
-				var stopwatch = new Stopwatch();
-				stopwatch.Start();
-
-				Search(searchDirectory, searchPatterns);
-
-				output.Add("");
+				var found = Search(searchDirectory, searchPatterns);
+				output.AddRange(found);
 			}
 
 			output.Add("Окончание поиска в " + DateTime.Now);
@@ -197,6 +194,45 @@ namespace SearchDaemon.Handlers
 			catch (UnauthorizedAccessException) { }
 
 			return files;
+		}
+
+		private void TestSearch()
+		{
+			var iterations = 100;
+			var output = new List<string>();
+			var searchDirectories = _settings.SearchDirectory.Split('|');
+			var searchPatterns = _settings.SearchMask.Split('|');
+			var methods = new List<SearchMethod>
+			{
+				SearchMethod.DIRECTORY_ENUMERATE_FILES,
+				SearchMethod.FAST_DIRECTORY_ENUMERATOR,
+				SearchMethod.FAST_FILE_INFO
+			};
+
+			var stopwatch = new Stopwatch();
+			foreach (var method in methods)
+			{
+				output.Add("Метод: " + method);
+				_settings.SearchMethod = method;
+
+				long total = 0;
+				for (var i = 0; i < iterations; i++)
+				{
+					foreach (var searchDirectory in searchDirectories)
+					{
+						stopwatch.Restart();
+						Search(searchDirectory, searchPatterns);
+
+						var time = stopwatch.ElapsedMilliseconds;
+						output.Add("Итерация: " + (i + 1) + ", Время поиска: " + time);
+						total += time;
+					}
+				}
+				output.Add("Всего: " + total);
+				output.Add("");
+			}
+
+			File.WriteAllLines(_settings.OutputFilePath, output);
 		}
 	}
 }
