@@ -75,11 +75,14 @@ namespace SearchDaemon
 
 			try
 			{
-				_settings.TimerInterval = int.Parse(ConfigurationManager.AppSettings["timerInterval"]);
+				_settings.TimerInterval = int.Parse(ConfigurationManager.AppSettings["timerInterval"]) * 60 * 1000;
 				_settings.SearchDirectory = ConfigurationManager.AppSettings["searchDirectory"];
+				_settings.ExceptDirectory = ConfigurationManager.AppSettings["exceptDirectory"]?.ToLower();
 				_settings.SearchOption = (SearchOption)int.Parse(ConfigurationManager.AppSettings["searchOption"]);
 				_settings.SearchMask = ConfigurationManager.AppSettings["searchMask"];
 				_settings.OutputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
+				_settings.SearchMethod = (SearchMethod)int.Parse(ConfigurationManager.AppSettings["searchMethod"]);
+				_settings.SearchParallel = ConfigurationManager.AppSettings["searchParallel"]?.Trim() == "1";
 
 				_settings.Loaded = true;
 			}

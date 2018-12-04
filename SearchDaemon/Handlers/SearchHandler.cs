@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -6,6 +7,8 @@ using System.Linq;
 using System.Threading;
 using System.Timers;
 using CodeProject;
+using Opulos.Core.IO;
+using SearchDaemon.Extensions;
 using SearchDaemon.Models;
 
 namespace SearchDaemon.Handlers
@@ -46,7 +49,7 @@ namespace SearchDaemon.Handlers
 
 			try
 			{
-				SearchFiles();
+				StartSearch();
 			}
 			catch (Exception ex)
 			{
@@ -57,26 +60,84 @@ namespace SearchDaemon.Handlers
 			_timer.Start();
 		}
 
-		private void SearchFiles()
+		private void StartSearch()
 		{
 			var searchDirectories = _settings.SearchDirectory.Split('|');
 			var searchPatterns = _settings.SearchMask.Split('|');
 
-			var result = new List<string>();
-			result.Add("Начало поиска в " + DateTime.Now);
+			var output = new List<string>();
+			output.Add("Начало поиска в " + DateTime.Now);
+
 			foreach (var searchDirectory in searchDirectories)
 			{
-				result.Add("Директория " + searchDirectory);
-				result.Add("Шаблон поиска " + searchPatterns);
-				//result.AddRange(searchPatterns.AsParallel()
-				//	.SelectMany(searchPattern => GetFilesDotNet(searchDirectory, searchPattern)));
-				result.AddRange(searchPatterns.AsParallel()
-					.SelectMany(searchPattern => GetFilesCodeProject(searchDirectory, searchPattern)));
-				result.Add("");
+				output.Add("Директория " + searchDirectory);
+				output.Add("Шаблон поиска " + _settings.SearchMask);
+
+				var stopwatch = new Stopwatch();
+				stopwatch.Start();
+
+				Search(searchDirectory, searchPatterns);
+
+				output.Add("");
 			}
 
-			result.Add("Окончание поиска в " + DateTime.Now);
-			File.WriteAllLines(_settings.OutputFilePath, result);
+			output.Add("Окончание поиска в " + DateTime.Now);
+			File.WriteAllLines(_settings.OutputFilePath, output);
+		}
+
+		private List<string> Search(string searchDirectory, string[] searchPatterns)
+		{
+			var result = new ConcurrentBag<string>();
+
+			switch (_settings.SearchMethod)
+			{
+				case SearchMethod.DIRECTORY_ENUMERATE_FILES:
+					if (_settings.SearchParallel)
+					{
+						 result.AddRange(searchPatterns.AsParallel()
+							.SelectMany(searchPattern => GetFilesDotNet(searchDirectory, searchPattern)));
+					}
+					else
+					{
+						foreach (var searchPattern in searchPatterns)
+						{
+							result.AddRange(GetFilesDotNet(searchDirectory, searchPattern));
+						}
+					}
+					break;
+				case SearchMethod.FAST_DIRECTORY_ENUMERATOR:
+					if (_settings.SearchParallel)
+					{
+						result.AddRange(searchPatterns.AsParallel()
+							.SelectMany(searchPattern => GetFilesCodeProject(searchDirectory, searchPattern)));
+					}
+					else
+					{
+						foreach (var searchPattern in searchPatterns)
+						{
+							result.AddRange(GetFilesCodeProject(searchDirectory, searchPattern));
+						}
+					}
+					break;
+				case SearchMethod.FAST_FILE_INFO:
+					if (_settings.SearchParallel)
+					{
+						result.AddRange(searchPatterns.AsParallel()
+							.SelectMany(searchPattern => GetFilesFastInfo(searchDirectory, searchPattern)));
+					}
+					else
+					{
+						foreach (var searchPattern in searchPatterns)
+						{
+							result.AddRange(GetFilesFastInfo(searchDirectory, searchPattern));
+						}
+					}
+					break;
+				default:
+					throw new ArgumentException("Недопустимый метод поиска.");
+			}
+
+			return result.ToList();
 		}
 
 		private List<string> GetFilesDotNet(string path, string pattern)
@@ -85,7 +146,8 @@ namespace SearchDaemon.Handlers
 
 			try
 			{
-				files.AddRange(Directory.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly));
+				files.AddRange(Directory.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
+					.Where(f => !new FileInfo(f).DirectoryName.ToLower().Contains(_settings.ExceptDirectory)));
 				if (_settings.SearchOption == SearchOption.AllDirectories)
 				{
 					foreach (var directory in Directory.GetDirectories(path))
@@ -104,12 +166,32 @@ namespace SearchDaemon.Handlers
 			try
 			{
 				files.AddRange(FastDirectoryEnumerator.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
-					.Where(f => !f.Path.Contains("Windows"))
+					.Where(f => !f.Path.Contains(_settings.ExceptDirectory))
 					.Select(f => f.Path));
 				if (_settings.SearchOption == SearchOption.AllDirectories)
 				{
 					foreach (var directory in Directory.GetDirectories(path))
 						files.AddRange(GetFilesCodeProject(directory, pattern));
+				}
+			}
+			catch (UnauthorizedAccessException) { }
+
+			return files;
+		}
+
+		private IEnumerable<string> GetFilesFastInfo(string path, string pattern)
+		{
+			var files = new List<string>();
+
+			try
+			{
+				files.AddRange(FastFileInfo.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
+					.Where(f => !f.DirectoryName.Contains(_settings.ExceptDirectory))
+					.Select(f => f.FullName));
+				if (_settings.SearchOption == SearchOption.AllDirectories)
+				{
+					foreach (var directory in Directory.GetDirectories(path))
+						files.AddRange(GetFilesFastInfo(directory, pattern));
 				}
 			}
 			catch (UnauthorizedAccessException) { }

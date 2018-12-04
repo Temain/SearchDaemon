@@ -237,7 +237,16 @@ namespace CodeProject
                 throw new ArgumentOutOfRangeException("searchOption");
             }
 
-            string fullPath = Path.GetFullPath(path);
+			string fullPath = "";
+
+			try
+			{
+				fullPath = Path.GetFullPath(path);
+			}
+			catch (Exception ex)
+			{
+
+			}
 
             return new FileEnumerable(fullPath, searchPattern, searchOption);
         }
