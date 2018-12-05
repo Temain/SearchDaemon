@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // связанные со сборкой.
 [assembly: AssemblyTitle("SearchDaemon")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Служба поиска файлов")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("SearchDaemon")]
-[assembly: AssemblyCopyright("Copyright ©  2018")]
+[assembly: AssemblyCopyright("Copyright ©  2018 Temain")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

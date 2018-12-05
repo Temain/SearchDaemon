@@ -49,8 +49,8 @@ namespace SearchDaemon.Handlers
 
 			try
 			{
-				TestSearch();
-				// StartSearch();
+				// TestSearch();
+				StartSearch();
 			}
 			catch (Exception ex)
 			{
