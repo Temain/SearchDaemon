@@ -63,18 +63,15 @@ namespace SearchDaemon.Handlers
 
 		private void StartSearch()
 		{
-			var searchDirectories = _settings.SearchDirectory.Split('|');
-			var searchPatterns = _settings.SearchMask.Split('|');
-
 			var output = new List<string>();
 			output.Add("Начало поиска в " + DateTime.Now);
 
-			foreach (var searchDirectory in searchDirectories)
+			foreach (var searchDirectory in _settings.SearchDirectory)
 			{
 				output.Add("Директория " + searchDirectory);
-				output.Add("Шаблон поиска " + _settings.SearchMask);
+				output.Add("Шаблон поиска " + string.Join(";", _settings.SearchMask));
 
-				var found = Search(searchDirectory, searchPatterns);
+				var found = Search(searchDirectory, _settings.SearchMask);
 				output.AddRange(found);
 			}
 
@@ -144,7 +141,7 @@ namespace SearchDaemon.Handlers
 			try
 			{
 				files.AddRange(Directory.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
-					.Where(f => !new FileInfo(f).DirectoryName.ToLower().Contains(_settings.ExceptDirectory)));
+					.Where(f => IsExcepted(new FileInfo(f).DirectoryName) == false));
 				if (_settings.SearchOption == SearchOption.AllDirectories)
 				{
 					foreach (var directory in Directory.GetDirectories(path))
@@ -152,6 +149,7 @@ namespace SearchDaemon.Handlers
 				}
 			}
 			catch (UnauthorizedAccessException) { }
+			catch (Exception) { }
 
 			return files;
 		}
@@ -163,7 +161,7 @@ namespace SearchDaemon.Handlers
 			try
 			{
 				files.AddRange(FastDirectoryEnumerator.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
-					.Where(f => !f.Path.Contains(_settings.ExceptDirectory))
+					.Where(f => IsExcepted(f.Path) == false)
 					.Select(f => f.Path));
 				if (_settings.SearchOption == SearchOption.AllDirectories)
 				{
@@ -172,6 +170,7 @@ namespace SearchDaemon.Handlers
 				}
 			}
 			catch (UnauthorizedAccessException) { }
+			catch (Exception) { }
 
 			return files;
 		}
@@ -182,26 +181,25 @@ namespace SearchDaemon.Handlers
 
 			try
 			{
-				files.AddRange(FastFileInfo.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
-					.Where(f => !f.DirectoryName.Contains(_settings.ExceptDirectory))
+				files.AddRange(FastFileInfo.EnumerateFiles(path, pattern, _settings.SearchOption)
+					.Where(f => IsExcepted(f.DirectoryName) == false)
 					.Select(f => f.FullName));
-				if (_settings.SearchOption == SearchOption.AllDirectories)
-				{
-					foreach (var directory in Directory.GetDirectories(path))
-						files.AddRange(GetFilesFastInfo(directory, pattern));
-				}
 			}
 			catch (UnauthorizedAccessException) { }
+			catch (Exception) { }
 
 			return files;
+		}
+
+		private bool IsExcepted(string directory)
+		{
+			return _settings.ExceptDirectory.Any(dir => dir.Contains(directory.ToLower()));
 		}
 
 		private void TestSearch()
 		{
 			var iterations = 100;
 			var output = new List<string>();
-			var searchDirectories = _settings.SearchDirectory.Split('|');
-			var searchPatterns = _settings.SearchMask.Split('|');
 			var methods = new List<SearchMethod>
 			{
 				SearchMethod.DIRECTORY_ENUMERATE_FILES,
@@ -218,10 +216,10 @@ namespace SearchDaemon.Handlers
 				long total = 0;
 				for (var i = 0; i < iterations; i++)
 				{
-					foreach (var searchDirectory in searchDirectories)
+					foreach (var searchDirectory in _settings.SearchDirectory)
 					{
 						stopwatch.Restart();
-						Search(searchDirectory, searchPatterns);
+						Search(searchDirectory, _settings.SearchMask);
 
 						var time = stopwatch.ElapsedMilliseconds;
 						output.Add("Итерация: " + (i + 1) + ", Время поиска: " + time);
