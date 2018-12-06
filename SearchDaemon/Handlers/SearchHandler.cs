@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Timers;
 using CodeProject;
+using CronNET;
 using Opulos.Core.IO;
 using SearchDaemon.Extensions;
 using SearchDaemon.Models;
@@ -17,15 +18,44 @@ namespace SearchDaemon.Handlers
 	{
 		private readonly EventLog _eventLog;
 		private readonly Settings _settings;
-		private readonly System.Timers.Timer _timer;
+
+		private System.Timers.Timer _timer;
+		private CronDaemon _cronDaemon;
 
 		public SearchHandler(Settings settings, EventLog eventLog)
 		{
 			_eventLog = eventLog;
 			_settings = settings;
+		}
 
-			var interval = _settings.TimerInterval;
-			_timer = new System.Timers.Timer(interval);
+		/// <summary>
+		/// Запуск поиска.
+		/// </summary>
+		public void Start()
+		{
+			if (_settings.SearchStartType == SearchStartType.Timer)
+			{
+				StartTimer();
+			}
+			else
+			{
+				StartCron();
+			}
+		}
+
+		/// <summary>
+		/// Остановка поиска.
+		/// </summary>
+		public void Stop()
+		{
+			if (_settings.SearchStartType == SearchStartType.Timer)
+			{
+				StopTimer();
+			}
+			else
+			{
+				StopCron();
+			}
 		}
 
 		/// <summary>
@@ -34,6 +64,8 @@ namespace SearchDaemon.Handlers
 		/// </summary>
 		public void StartTimer()
 		{
+			var interval = _settings.TimerInterval;
+			_timer = new System.Timers.Timer(interval);
 			_timer.Elapsed += OnSearch;
 			_timer.AutoReset = false;
 
@@ -42,19 +74,37 @@ namespace SearchDaemon.Handlers
 		}
 
 		/// <summary>
+		/// Запуск крона.
+		/// </summary>
+		public void StartCron()
+		{
+			_cronDaemon = new CronDaemon();
+			_cronDaemon.AddJob(_settings.Crontab, OnSearch);
+			_cronDaemon.Start();
+		}
+
+		/// <summary>
 		/// Остановка таймера.
 		/// </summary>
-		public void CloseTimer()
+		public void StopTimer()
 		{
 			_timer.Stop();
 			_timer.Dispose();
 		}
 
 		/// <summary>
+		/// Остановка крона.
+		/// </summary>
+		public void StopCron()
+		{
+			_cronDaemon.Stop();
+		}
+
+		/// <summary>
 		/// Производит поиск файлов с заданным промежутком времени, 
 		/// следующая итерация не начинается пока не завершена предыдущая.
 		/// </summary>
-		private void OnSearch(Object sender, ElapsedEventArgs e)
+		private void OnSearch(object sender, ElapsedEventArgs e)
 		{
 			_eventLog.WriteEntry("Поиск файлов...", EventLogEntryType.Information);
 
@@ -74,7 +124,12 @@ namespace SearchDaemon.Handlers
 				File.WriteAllLines(_settings.OutputFilePath, searchResult);
 			}
 
-			_timer.Start();
+			if (_timer != null) _timer.Start();
+		}
+
+		private void OnSearch()
+		{
+			OnSearch(null, null);
 		}
 
 		/// <summary>
@@ -83,17 +138,26 @@ namespace SearchDaemon.Handlers
 		private List<string> StartSearch()
 		{
 			var output = new List<string>();
+
 			output.Add("Начало поиска в " + DateTime.Now);
 
+			var foundCount = 0;
 			foreach (var searchDirectory in _settings.SearchDirectory)
 			{
 				output.Add("Директория " + searchDirectory);
 				output.Add("Шаблон поиска " + string.Join(";", _settings.SearchMask));
 
 				var found = Search(searchDirectory, _settings.SearchMask);
+				foundCount += found.Count();
 				output.AddRange(found);
+
+				if (_settings.DeleteFiles)
+				{
+					DeletedFiles(found);
+				}
 			}
 
+			output.Add("Найдено " + foundCount + " файлов");
 			output.Add("Окончание поиска в " + DateTime.Now);
 			return output;
 		}
@@ -239,12 +303,20 @@ namespace SearchDaemon.Handlers
 			return _settings.ExceptDirectory.Any(dir => dir.Contains(directory.ToLower()));
 		}
 
-		private bool IsShouldStart()
+		/// <summary>
+		/// Удаление файлов, если это возможно.
+		/// </summary>
+		/// <param name="files">Список файлов.</param>
+		private void DeletedFiles(List<string> files)
 		{
-			var shedule = "";
-
-
-			return true;
+			foreach (var file in files)
+			{
+				try
+				{
+					File.Delete(file);
+				}
+				catch { }
+			}
 		}
 	}
 }

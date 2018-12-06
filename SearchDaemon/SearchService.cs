@@ -51,7 +51,7 @@ namespace SearchDaemon
 			try
 			{
 				_searchHandler = new SearchHandler(_settings, EventLog);
-				_searchHandler.StartTimer();
+				_searchHandler.Start();
 			}
 			catch (Exception ex)
 			{
@@ -63,7 +63,7 @@ namespace SearchDaemon
 		{
 			if (_searchHandler != null)
 			{
-				_searchHandler.CloseTimer();
+				_searchHandler.Stop();
 			}
 
 			EventLog.WriteEntry("SearchDaemon остановлен.");
@@ -75,7 +75,9 @@ namespace SearchDaemon
 
 			try
 			{
+				_settings.SearchStartType = (SearchStartType)int.Parse(ConfigurationManager.AppSettings["startType"]);
 				_settings.TimerInterval = int.Parse(ConfigurationManager.AppSettings["timerInterval"]) * 60 * 1000;
+				_settings.Crontab = ConfigurationManager.AppSettings["crontab"];
 				_settings.SearchDirectory = ConfigurationManager.AppSettings["searchDirectory"]?.Split('|');
 				_settings.ExceptDirectory = ConfigurationManager.AppSettings["exceptDirectory"]?.ToLower().Split('|');
 				_settings.SearchOption = (SearchOption)int.Parse(ConfigurationManager.AppSettings["searchOption"]);
@@ -83,6 +85,7 @@ namespace SearchDaemon
 				_settings.OutputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
 				_settings.SearchMethod = (SearchMethod)int.Parse(ConfigurationManager.AppSettings["searchMethod"]);
 				_settings.SearchParallel = ConfigurationManager.AppSettings["searchParallel"]?.Trim() == "1";
+				_settings.DeleteFiles = ConfigurationManager.AppSettings["deleteFiles"]?.Trim() == "1";
 
 				_settings.Loaded = true;
 			}

@@ -52,9 +52,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CodeProject\FastFileInfo.cs" />
+    <Compile Include="CronNet\CronDaemon.cs" />
+    <Compile Include="CronNet\CronJob.cs" />
+    <Compile Include="CronNet\CronSchedule.cs" />
     <Compile Include="Extensions\ConcurrentBagExtensions.cs" />
     <Compile Include="Handlers\SearchHandler.cs" />
     <Compile Include="CodeProject\FastDirectoryEnumerator.cs" />
+    <Compile Include="Models\SearchStartType.cs" />
     <Compile Include="Models\SearchMethod.cs" />
     <Compile Include="Models\Settings.cs" />
     <Compile Include="ProjectInstaller.cs">
