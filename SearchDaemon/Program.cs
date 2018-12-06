@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.ServiceProcess;
 using System.Threading;
 
@@ -22,6 +23,7 @@ namespace SearchDaemon
 			}
 			else
 			{
+				Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 				ServiceBase.Run(new SearchService());
 			}
 		}

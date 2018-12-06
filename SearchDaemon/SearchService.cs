@@ -39,7 +39,7 @@ namespace SearchDaemon
 
 		public void Start()
 		{
-			EventLog.WriteEntry("SearchDaemon started.");
+			EventLog.WriteEntry("SearchDaemon запущен.");
 
 			LoadSettings();
 			if (!_settings.Loaded)
@@ -66,7 +66,7 @@ namespace SearchDaemon
 				_searchHandler.CloseTimer();
 			}
 
-			EventLog.WriteEntry("SearchDaemon stoped.");
+			EventLog.WriteEntry("SearchDaemon остановлен.");
 		}
 
 		private void LoadSettings()

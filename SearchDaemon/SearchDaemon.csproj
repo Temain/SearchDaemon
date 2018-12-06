@@ -71,6 +71,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\SearchHandlerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

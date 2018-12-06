@@ -8,7 +8,7 @@ Target framework: .Net Framework 4.6.2
 1. Переместить файлы сервиса в подходящую директорию
 2. В файле SearchDaemon.exe.config установить значения настроек
 3. Запустить cmd от имени администратора и выполнить команды:
-4. cd C:\Windows\Microsoft.NET\Framework\v2.0.50727
+4. cd C:\Windows\Microsoft.NET\Framework\v4.0.30319
 5. InstallUtil.exe #{ServicePath} (полный путь к файлу SearchDaemon.exe)
 6. Запустить сервис в управлении службами Windows + можно поменять тип запуска на "Автоматически"
 

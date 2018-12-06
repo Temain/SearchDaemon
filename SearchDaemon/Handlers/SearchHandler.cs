@@ -28,40 +28,59 @@ namespace SearchDaemon.Handlers
 			_timer = new System.Timers.Timer(interval);
 		}
 
+		/// <summary>
+		/// Запуск таймера. Первая итерация запускается принудительно, 
+		/// иначе она была бы проведена только по истечении заданного в настройках интервала времени.
+		/// </summary>
 		public void StartTimer()
 		{
-			_timer.Elapsed += StartSearch;
+			_timer.Elapsed += OnSearch;
 			_timer.AutoReset = false;
 
 			// Принудительно выполнить проверку, не дожидаясь таймера
-			ThreadPool.QueueUserWorkItem((_) => StartSearch(null, null));
+			ThreadPool.QueueUserWorkItem((_) => OnSearch(null, null));
 		}
 
+		/// <summary>
+		/// Остановка таймера.
+		/// </summary>
 		public void CloseTimer()
 		{
 			_timer.Stop();
 			_timer.Dispose();
 		}
 
-		private void StartSearch(Object sender, ElapsedEventArgs e)
+		/// <summary>
+		/// Производит поиск файлов с заданным промежутком времени, 
+		/// следующая итерация не начинается пока не завершена предыдущая.
+		/// </summary>
+		private void OnSearch(Object sender, ElapsedEventArgs e)
 		{
 			_eventLog.WriteEntry("Поиск файлов...", EventLogEntryType.Information);
 
+			List<string> searchResult = null;
 			try
 			{
-				// TestSearch();
-				StartSearch();
+				searchResult = StartSearch();
+				_eventLog.WriteEntry("Поиск успешно завершен.", EventLogEntryType.Information);
 			}
 			catch (Exception ex)
 			{
 				_eventLog.WriteEntry("Ошибка при поиске файлов: " + ex.StackTrace, EventLogEntryType.Warning);
 			}
 
-			_eventLog.WriteEntry("Поиск успешно завершена.", EventLogEntryType.Information);
+			if (searchResult != null)
+			{
+				File.WriteAllLines(_settings.OutputFilePath, searchResult);
+			}
+
 			_timer.Start();
 		}
 
-		private void StartSearch()
+		/// <summary>
+		/// Запуск поиска файлов. Список найденных файлов записывается в текстовый файл.
+		/// </summary>
+		private List<string> StartSearch()
 		{
 			var output = new List<string>();
 			output.Add("Начало поиска в " + DateTime.Now);
@@ -76,54 +95,60 @@ namespace SearchDaemon.Handlers
 			}
 
 			output.Add("Окончание поиска в " + DateTime.Now);
-			File.WriteAllLines(_settings.OutputFilePath, output);
+			return output;
 		}
 
-		private List<string> Search(string searchDirectory, string[] searchPatterns)
+		/// <summary>
+		/// ПРоизводит поиск файлов в соответсвии с указанным в настрйках методом поиска.
+		/// </summary>
+		/// <param name="searchDirectory">Директория поиска.</param>
+		/// <param name="searchPatterns">Маски поиска.</param>
+		/// <returns>Список найденных файлов.</returns>
+		public List<string> Search(string searchDirectory, string[] searchPatterns)
 		{
-			var result = new ConcurrentBag<string>();
+			var found = new ConcurrentBag<string>();
 
 			switch (_settings.SearchMethod)
 			{
 				case SearchMethod.DIRECTORY_ENUMERATE_FILES:
 					if (_settings.SearchParallel)
 					{
-						 result.AddRange(searchPatterns.AsParallel()
+						found.AddRange(searchPatterns.AsParallel()
 							.SelectMany(searchPattern => GetFilesDotNet(searchDirectory, searchPattern)));
 					}
 					else
 					{
 						foreach (var searchPattern in searchPatterns)
 						{
-							result.AddRange(GetFilesDotNet(searchDirectory, searchPattern));
+							found.AddRange(GetFilesDotNet(searchDirectory, searchPattern));
 						}
 					}
 					break;
 				case SearchMethod.FAST_DIRECTORY_ENUMERATOR:
 					if (_settings.SearchParallel)
 					{
-						result.AddRange(searchPatterns.AsParallel()
+						found.AddRange(searchPatterns.AsParallel()
 							.SelectMany(searchPattern => GetFilesCodeProject(searchDirectory, searchPattern)));
 					}
 					else
 					{
 						foreach (var searchPattern in searchPatterns)
 						{
-							result.AddRange(GetFilesCodeProject(searchDirectory, searchPattern));
+							found.AddRange(GetFilesCodeProject(searchDirectory, searchPattern));
 						}
 					}
 					break;
 				case SearchMethod.FAST_FILE_INFO:
 					if (_settings.SearchParallel)
 					{
-						result.AddRange(searchPatterns.AsParallel()
+						found.AddRange(searchPatterns.AsParallel()
 							.SelectMany(searchPattern => GetFilesFastInfo(searchDirectory, searchPattern)));
 					}
 					else
 					{
 						foreach (var searchPattern in searchPatterns)
 						{
-							result.AddRange(GetFilesFastInfo(searchDirectory, searchPattern));
+							found.AddRange(GetFilesFastInfo(searchDirectory, searchPattern));
 						}
 					}
 					break;
@@ -131,9 +156,15 @@ namespace SearchDaemon.Handlers
 					throw new ArgumentException("Недопустимый метод поиска.");
 			}
 
-			return result.ToList();
+			return found.ToList();
 		}
 
+		/// <summary>
+		/// Поиск файлов стандартными средствами .Net
+		/// </summary>
+		/// <param name="path">Директория поиска.</param>
+		/// <param name="pattern">Маска поиска.</param>
+		/// <returns>Список найденных файлов.</returns>
 		private List<string> GetFilesDotNet(string path, string pattern)
 		{
 			var files = new List<string>();
@@ -154,20 +185,21 @@ namespace SearchDaemon.Handlers
 			return files;
 		}
 
+		/// <summary>
+		/// Поиск файлов посредством класса FastDirectoryEnumerator, найденного на CodeProject.
+		/// </summary>
+		/// <param name="path">Директория поиска.</param>
+		/// <param name="pattern">Маска поиска.</param>
+		/// <returns>Список найденных файлов.</returns>
 		private IEnumerable<string> GetFilesCodeProject(string path, string pattern)
 		{
 			var files = new List<string>();
 
 			try
 			{
-				files.AddRange(FastDirectoryEnumerator.EnumerateFiles(path, pattern, SearchOption.TopDirectoryOnly)
-					.Where(f => IsExcepted(f.Path) == false)
+				files.AddRange(FastDirectoryEnumerator.EnumerateFiles(path, pattern, _settings.SearchOption)
+					.Where(f => IsExcepted(Path.GetDirectoryName(f.Path)) == false)
 					.Select(f => f.Path));
-				if (_settings.SearchOption == SearchOption.AllDirectories)
-				{
-					foreach (var directory in Directory.GetDirectories(path))
-						files.AddRange(GetFilesCodeProject(directory, pattern));
-				}
 			}
 			catch (UnauthorizedAccessException) { }
 			catch (Exception) { }
@@ -175,6 +207,12 @@ namespace SearchDaemon.Handlers
 			return files;
 		}
 
+		/// <summary>
+		/// Поиск файлов посредством класса FasFileInfo (новая версия FastDirectoryEnumerator).
+		/// </summary>
+		/// <param name="path">Директория поиска.</param>
+		/// <param name="pattern">Маска поиска.</param>
+		/// <returns>Список найденных файлов.</returns>
 		private IEnumerable<string> GetFilesFastInfo(string path, string pattern)
 		{
 			var files = new List<string>();
@@ -191,46 +229,22 @@ namespace SearchDaemon.Handlers
 			return files;
 		}
 
+		/// <summary>
+		/// Проверка директории на наличие в списке исключенных директорий.
+		/// </summary>
+		/// <param name="directory">Директория поиска.</param>
+		/// <returns></returns>
 		private bool IsExcepted(string directory)
 		{
 			return _settings.ExceptDirectory.Any(dir => dir.Contains(directory.ToLower()));
 		}
 
-		private void TestSearch()
+		private bool IsShouldStart()
 		{
-			var iterations = 100;
-			var output = new List<string>();
-			var methods = new List<SearchMethod>
-			{
-				SearchMethod.DIRECTORY_ENUMERATE_FILES,
-				SearchMethod.FAST_DIRECTORY_ENUMERATOR,
-				SearchMethod.FAST_FILE_INFO
-			};
+			var shedule = "";
 
-			var stopwatch = new Stopwatch();
-			foreach (var method in methods)
-			{
-				output.Add("Метод: " + method);
-				_settings.SearchMethod = method;
 
-				long total = 0;
-				for (var i = 0; i < iterations; i++)
-				{
-					foreach (var searchDirectory in _settings.SearchDirectory)
-					{
-						stopwatch.Restart();
-						Search(searchDirectory, _settings.SearchMask);
-
-						var time = stopwatch.ElapsedMilliseconds;
-						output.Add("Итерация: " + (i + 1) + ", Время поиска: " + time);
-						total += time;
-					}
-				}
-				output.Add("Всего: " + total);
-				output.Add("");
-			}
-
-			File.WriteAllLines(_settings.OutputFilePath, output);
+			return true;
 		}
 	}
 }
