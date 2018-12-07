@@ -55,7 +55,6 @@
     <Compile Include="CronNet\CronDaemon.cs" />
     <Compile Include="CronNet\CronJob.cs" />
     <Compile Include="CronNet\CronSchedule.cs" />
-    <Compile Include="Extensions\ConcurrentBagExtensions.cs" />
     <Compile Include="Handlers\SearchHandler.cs" />
     <Compile Include="CodeProject\FastDirectoryEnumerator.cs" />
     <Compile Include="Models\SearchStartType.cs" />

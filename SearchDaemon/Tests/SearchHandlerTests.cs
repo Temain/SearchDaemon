@@ -19,12 +19,11 @@ namespace SearchDaemon.Tests
 
 		public void RunAllMethods()
 		{
-			var iterations = 100;
+			var iterations = 5;
 			var output = new List<string>();
 			var methods = new List<SearchMethod>
 			{
 				SearchMethod.DIRECTORY_ENUMERATE_FILES,
-				SearchMethod.FAST_DIRECTORY_ENUMERATOR,
 				SearchMethod.FAST_FILE_INFO
 			};
 

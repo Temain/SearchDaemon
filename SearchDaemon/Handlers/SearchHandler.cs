@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,7 +9,6 @@ using System.Timers;
 using CodeProject;
 using CronNET;
 using Opulos.Core.IO;
-using SearchDaemon.Extensions;
 using SearchDaemon.Models;
 
 namespace SearchDaemon.Handlers
@@ -139,7 +137,6 @@ namespace SearchDaemon.Handlers
 		private List<string> StartSearch()
 		{
 			var output = new List<string>();
-
 			output.Add("Начало поиска в " + DateTime.Now);
 
 			var foundCount = 0;
@@ -169,48 +166,48 @@ namespace SearchDaemon.Handlers
 		/// <param name="searchDirectory">Директория поиска.</param>
 		/// <param name="searchPatterns">Маски поиска.</param>
 		/// <returns>Список найденных файлов.</returns>
-		public List<string> Search(string searchDirectory, string[] searchPatterns)
+		public IEnumerable<string> Search(string searchDirectory, string[] searchPatterns)
 		{
-			var found = new ConcurrentBag<string>();
-			var searchMask = string.Join("$|", searchPatterns) + "$";
-			searchMask = searchMask.Replace(".", "[.]").Replace("*", ".*").Replace("?", ".");
+			var found = new List<string>();
+			var searchMask = (string.Join("$|", searchPatterns) + "$")
+				.Replace(".", "[.]").Replace("*", ".*").Replace("?", ".");
+			var searchRegex = new Regex(searchMask, RegexOptions.IgnoreCase /*| RegexOptions.Compiled*/);
 
 			switch (_settings.SearchMethod)
 			{
 				case SearchMethod.DIRECTORY_ENUMERATE_FILES:
-					found.AddRange(GetFilesDotNet(searchDirectory, searchMask));
-					break;
-				case SearchMethod.FAST_DIRECTORY_ENUMERATOR:
-					found.AddRange(GetFilesCodeProject(searchDirectory, searchMask));
+					found.AddRange(GetFilesDotNet(searchDirectory, searchRegex));
 					break;
 				case SearchMethod.FAST_FILE_INFO:
-					found.AddRange(GetFilesFastInfo(searchDirectory, searchMask));
+					found.AddRange(GetFilesFastInfo(searchDirectory, searchRegex));
 					break;
 				default:
 					throw new ArgumentException("Недопустимый метод поиска.");
 			}
 
-			return found.ToList();
+			return found;
 		}
 
 		/// <summary>
 		/// Поиск файлов стандартными средствами .Net
 		/// </summary>
 		/// <param name="path">Директория поиска.</param>
-		/// <param name="mask">Маска поиска.</param>
+		/// <param name="regex">Регулярное выражение.</param>
 		/// <returns>Список найденных файлов.</returns>
-		private List<string> GetFilesDotNet(string path, string mask)
+		private IEnumerable<string> GetFilesDotNet(string path, Regex regex)
 		{
-			var files = new List<string>();
+			var files = Enumerable.Empty<string>();
 			try
 			{
-				files.AddRange(Directory.GetFiles(path, "*.*", SearchOption.TopDirectoryOnly)
-					.Where(f => Regex.IsMatch(f, mask, RegexOptions.IgnoreCase) == true 
-						&& IsExcepted(f) == false));
+				var directoryInfo = new DirectoryInfo(path);
+				files = files.Concat(
+					directoryInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
+						.Where(f => regex.IsMatch(f.Name) == true && IsExcluded(f.DirectoryName) == false)
+						.Select(f => f.FullName));
 				if (_settings.SearchOption == SearchOption.AllDirectories)
 				{
-					foreach (var directory in Directory.GetDirectories(path))
-						files.AddRange(GetFilesDotNet(directory, mask));
+					foreach (var dir in Directory.EnumerateDirectories(path))
+						files = files.Concat(GetFilesDotNet(dir, regex));
 				}
 			}
 			catch (UnauthorizedAccessException) { }
@@ -220,30 +217,15 @@ namespace SearchDaemon.Handlers
 		}
 
 		/// <summary>
-		/// Поиск файлов посредством класса FastDirectoryEnumerator, найденного на CodeProject.
-		/// </summary>
-		/// <param name="path">Директория поиска.</param>
-		/// <param name="mask">Маска поиска.</param>
-		/// <returns>Список найденных файлов.</returns>
-		private IEnumerable<string> GetFilesCodeProject(string path, string mask)
-		{
-			return FastDirectoryEnumerator.EnumerateFiles(path, "*.*", _settings.SearchOption)
-				.Where(f => Regex.IsMatch(f.Name, mask, RegexOptions.IgnoreCase) == true 
-					&& IsExcepted(f.Path) == false)
-				.Select(f => f.Path);
-		}
-
-		/// <summary>
 		/// Поиск файлов посредством класса FasFileInfo (новая версия FastDirectoryEnumerator).
 		/// </summary>
 		/// <param name="path">Директория поиска.</param>
-		/// <param name="mask">Маска поиска.</param>
+		/// <param name="regex">Маска поиска.</param>
 		/// <returns>Список найденных файлов.</returns>
-		private IEnumerable<string> GetFilesFastInfo(string path, string mask)
+		private IEnumerable<string> GetFilesFastInfo(string path, Regex regex)
 		{
 			return FastFileInfo.EnumerateFiles(path, "*.*", _settings.SearchOption)
-				.Where(f => Regex.IsMatch(f.Name, mask, RegexOptions.IgnoreCase) == true 
-					&& IsExcepted(f.DirectoryName) == false)
+				.Where(f => regex.IsMatch(f.Name) == true && IsExcluded(f.DirectoryName) == false)
 				.Select(f => f.FullName);
 		}
 
@@ -252,16 +234,16 @@ namespace SearchDaemon.Handlers
 		/// </summary>
 		/// <param name="directory">Директория поиска.</param>
 		/// <returns></returns>
-		private bool IsExcepted(string directory)
+		private bool IsExcluded(string directory)
 		{
-			return _settings.ExcludeDirectory.Any(dir => dir.ToLower().StartsWith(directory.ToLower()));
+			return _settings.ExcludeDirectory.Any(excluded => directory.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase));
 		}
 
 		/// <summary>
 		/// Удаление файлов, если это возможно.
 		/// </summary>
 		/// <param name="files">Список файлов.</param>
-		private void DeletedFiles(List<string> files)
+		private void DeletedFiles(IEnumerable<string> files)
 		{
 			foreach (var file in files)
 			{
