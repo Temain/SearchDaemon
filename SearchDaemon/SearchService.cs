@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
 using System.Diagnostics;
@@ -79,13 +80,20 @@ namespace SearchDaemon
 				_settings.TimerInterval = int.Parse(ConfigurationManager.AppSettings["timerInterval"]) * 60 * 1000;
 				_settings.Crontab = ConfigurationManager.AppSettings["crontab"];
 				_settings.SearchDirectory = ConfigurationManager.AppSettings["searchDirectory"]?.Split('|');
-				_settings.ExceptDirectory = ConfigurationManager.AppSettings["exceptDirectory"]?.ToLower().Split('|');
 				_settings.SearchOption = (SearchOption)int.Parse(ConfigurationManager.AppSettings["searchOption"]);
 				_settings.SearchMask = ConfigurationManager.AppSettings["searchMask"]?.Split('|');
 				_settings.OutputFilePath = ConfigurationManager.AppSettings["outputFilePath"];
 				_settings.SearchMethod = (SearchMethod)int.Parse(ConfigurationManager.AppSettings["searchMethod"]);
-				_settings.SearchParallel = ConfigurationManager.AppSettings["searchParallel"]?.Trim() == "1";
 				_settings.DeleteFiles = ConfigurationManager.AppSettings["deleteFiles"]?.Trim() == "1";
+
+				_settings.ExcludeDirectory = ConfigurationManager.AppSettings["excludeDirectory"]?.Split('|');
+				var excludedDirectories = new List<string>();
+				foreach (var dir in _settings.ExcludeDirectory)
+				{
+					var expanded = Environment.ExpandEnvironmentVariables(dir);
+					excludedDirectories.Add(expanded);
+				}
+				_settings.ExcludeDirectory = excludedDirectories.ToArray();
 
 				_settings.Loaded = true;
 			}

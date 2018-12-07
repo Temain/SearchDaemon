@@ -45,7 +45,7 @@ namespace SearchDaemon.Models
 		/// <summary>
 		/// Исключеные из поиска директории.
 		/// </summary>
-		public string[] ExceptDirectory { get; set; }
+		public string[] ExcludeDirectory { get; set; }
 
 		/// <summary>
 		/// Опции поиска. Поиск только в выбранной директории или и в поддиректориях.
@@ -71,14 +71,6 @@ namespace SearchDaemon.Models
 		/// По умолчанию: 1
 		/// </summary>
 		public SearchMethod SearchMethod { get; set; }
-
-		/// <summary>
-		/// Использовать параллельные вычисления. Поиск ведется быстрее, но с большей нагрузкой на ЦП.
-		/// Актуально только при поиске по нескольким маскам(разденных символом '|').
-		/// Варианты: 0 или 1
-		/// По умолчанию: 1
-		/// </summary>
-		public bool SearchParallel { get; set; }
 
 		/// <summary>
 		/// Удалять найденные файлы.
