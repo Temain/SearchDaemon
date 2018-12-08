@@ -1,4 +1,4 @@
-﻿namespace SearchDaemon.Models
+﻿namespace SearchDaemon.Core.Models
 {
 	public enum SearchStartType
 	{

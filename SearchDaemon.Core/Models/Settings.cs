@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace SearchDaemon.Models
+namespace SearchDaemon.Core.Models
 {
 	public class Settings
 	{
@@ -43,6 +43,11 @@ namespace SearchDaemon.Models
 		public string[] SearchDirectory { get; set; }
 
 		/// <summary>
+		/// Сканировать директории поиска параллельно.
+		/// </summary>
+		public bool SearchParallel { get; set; }
+
+		/// <summary>
 		/// Исключеные из поиска директории.
 		/// </summary>
 		public string[] ExcludeDirectory { get; set; }
@@ -78,6 +83,13 @@ namespace SearchDaemon.Models
 		/// По умолчанию: 0
 		/// </summary>
 		public bool DeleteFiles { get; set; }
+
+		/// <summary>
+		/// Режим тестирования, выполнение поиска разными методами N итераций.
+		/// Варианты: 0 или 1
+		/// По умолчанию: 0
+		/// </summary>
+		public bool TestMode { get; set; }
 
 		/// <summary>
 		/// Флаг загрузки настроек.

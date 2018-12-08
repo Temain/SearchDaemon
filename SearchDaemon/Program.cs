@@ -2,6 +2,8 @@
 using System.IO;
 using System.ServiceProcess;
 using System.Threading;
+using Ninject;
+using SearchDaemon.Core.Ninject;
 
 namespace SearchDaemon
 {
@@ -12,19 +14,24 @@ namespace SearchDaemon
 		/// </summary>
 		static void Main()
 		{
-			if (Environment.UserInteractive)
+			using (IKernel kernel = new StandardKernel(new SearchDaemonNinjectModule()))
 			{
+				var searchService = kernel.Get<SearchService>();
+				if (Environment.UserInteractive)
+				{
 #if DEBUG
-				(new SearchService()).Start();
-				Thread.Sleep(Timeout.Infinite);
+					searchService.Start();
+					Thread.Sleep(Timeout.Infinite);
 #else
-				// MessageBox.Show("Приложение должно быть установлено в виде службы Windows и не может быть запущено интерактивно.");
+					// MessageBox.Show(@"Приложение должно быть установлено в виде службы Windows 
+					// и не может быть запущено интерактивно.");
 #endif
-			}
-			else
-			{
-				Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
-				ServiceBase.Run(new SearchService());
+				}
+				else
+				{
+					Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+					ServiceBase.Run(searchService);
+				}
 			}
 		}
 	}
