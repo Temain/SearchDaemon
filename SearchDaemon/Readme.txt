@@ -6,7 +6,7 @@ Target framework: .Net Framework 4.6.2
 
 Установка:
 1. Переместить файлы сервиса в подходящую директорию
-2. В файле SearchDaemon.exe.config установить значения настроек
+2. В файле SearchDaemon.ini установить значения настроек
 3. Запустить cmd от имени администратора и выполнить команды:
 4. cd C:\Windows\Microsoft.NET\Framework\v4.0.30319
 5. InstallUtil.exe #{ServicePath} (полный путь к файлу SearchDaemon.exe)
@@ -21,4 +21,4 @@ Target framework: .Net Framework 4.6.2
 1. Остановить сервис
 2. InstallUtil.exe /u #{ServicePath}
 
-При изменении настроек в файле SearchDaemon.exe.config необходимо перезапустить сервис.
+При изменении настроек в файле SearchDaemon.ini необходимо перезапустить сервис.

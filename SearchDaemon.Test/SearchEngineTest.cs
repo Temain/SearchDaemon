@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using SearchDaemon.Core.Models;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace SearchDaemon.Test
 {
