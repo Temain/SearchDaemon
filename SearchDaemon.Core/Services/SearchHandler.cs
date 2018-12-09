@@ -143,7 +143,7 @@ namespace SearchDaemon.Core.Services
 			var found = new ConcurrentBag<string>();
 			output.Add("Начало поиска: " + DateTime.Now);
 			output.Add("Шаблон поиска: " + string.Join(";", SearchSettings.SearchMask));
-			output.Add("Директории: " + SearchSettings.SearchDirectory);
+			output.Add("Директории: " + string.Join(";", SearchSettings.SearchDirectory));
 
 			if (SearchSettings.SearchParallel)
 			{

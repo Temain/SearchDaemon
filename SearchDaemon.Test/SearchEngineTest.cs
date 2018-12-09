@@ -1,13 +1,9 @@
-﻿using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Ninject;
-using SearchDaemon.Core.Extensions;
 using SearchDaemon.Core.Models;
-using SearchDaemon.Core.Ninject;
 using SearchDaemon.Core.Services;
 
 namespace SearchDaemon.Test
@@ -24,7 +20,7 @@ namespace SearchDaemon.Test
 		[TestMethod]
 		public void RunAllMethods()
 		{
-			var iterations = 1;
+			var iterations = 4;
 			var output = new List<string>();
 			var methods = new List<SearchMethod>
 			{
@@ -32,6 +28,8 @@ namespace SearchDaemon.Test
 				SearchMethod.FAST_FILE_INFO,
 				SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE
 			};
+
+			SearchSettings.SearchParallel = false;
 
 			var stopwatch = new Stopwatch();
 			foreach (var method in methods)
@@ -42,6 +40,15 @@ namespace SearchDaemon.Test
 				long total = 0;
 				for (var i = 0; i < iterations; i++)
 				{
+					if (i % 2 != 0)
+					{
+						SearchSettings.SearchParallel = true;
+					}
+					else
+					{
+						SearchSettings.SearchParallel = false;
+					}
+
 					stopwatch.Restart();
 
 					if (SearchSettings.SearchParallel)

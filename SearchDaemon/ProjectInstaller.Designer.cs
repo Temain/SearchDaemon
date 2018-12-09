@@ -33,7 +33,6 @@
 			// 
 			// searchDaemonProcessInstaller
 			// 
-			this.searchDaemonProcessInstaller.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
 			this.searchDaemonProcessInstaller.Password = null;
 			this.searchDaemonProcessInstaller.Username = null;
 			// 

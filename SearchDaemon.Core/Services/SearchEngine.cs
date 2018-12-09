@@ -11,6 +11,12 @@ namespace SearchDaemon.Core.Services
 {
 	public class SearchEngine : ISearchEngine
 	{
+		#region Contructors
+
+		public SearchEngine() { }
+
+		#endregion // Contructors
+
 		/// <summary>
 		/// Производит поиск файлов в соответсвии с указанным в настрйках методом поиска.
 		/// </summary>
