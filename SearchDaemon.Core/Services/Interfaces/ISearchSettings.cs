@@ -1,20 +1,26 @@
-﻿using System.IO;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using SearchDaemon.Core.Models;
 
-namespace SearchDaemon.Core.Models
+namespace SearchDaemon.Core.Services.Interfaces
 {
-	public class Settings
+	public interface ISearchSettings
 	{
 		/// <summary>
 		/// Тип запуска поиска:
 		/// - по таймеру
 		/// - по крону
 		/// </summary>
-		public SearchStartType SearchStartType { get; set; }
+		SearchStartType SearchStartType { get; set; }
 
 		/// <summary>
 		/// Интервал запуска поиска при выборе типа запуска по таймеру. 
 		/// </summary>
-		public int TimerInterval { get; set; }
+		int TimerInterval { get; set; }
 
 		/// <summary>
 		/// Настройки запуска поиска по крону.
@@ -35,37 +41,37 @@ namespace SearchDaemon.Core.Models
 		///  1-55 * * * *     Каждую минуту через 55-ю минуту.
 		///  * 1,10,20 * * *  Каждый 1, 10 и 20 час.
 		/// </summary>
-		public string Crontab { get; set; }
+		string Crontab { get; set; }
 
 		/// <summary>
 		/// Директории поиска.
 		/// </summary>
-		public string[] SearchDirectory { get; set; }
+		string[] SearchDirectory { get; set; }
 
 		/// <summary>
 		/// Сканировать директории поиска параллельно.
 		/// </summary>
-		public bool SearchParallel { get; set; }
+		bool SearchParallel { get; set; }
 
 		/// <summary>
 		/// Исключеные из поиска директории.
 		/// </summary>
-		public string[] ExcludeDirectory { get; set; }
+		string[] ExcludeDirectory { get; set; }
 
 		/// <summary>
 		/// Опции поиска. Поиск только в выбранной директории или и в поддиректориях.
 		/// </summary>
-		public SearchOption SearchOption { get; set; }
+		SearchOption SearchOption { get; set; }
 
 		/// <summary>
 		/// Маски поиска.
 		/// </summary>
-		public string[] SearchMask { get; set; }
+		string[] SearchMask { get; set; }
 
 		/// <summary>
 		/// Директория файла с результатами поиска.
 		/// </summary>
-		public string OutputFilePath { get; set; }
+		string OutputFilePath { get; set; }
 
 		/// <summary>
 		/// Метод поиска.
@@ -75,25 +81,25 @@ namespace SearchDaemon.Core.Models
 		///	3. Обертка над методами WinAPI (Версия #2)
 		/// По умолчанию: 1
 		/// </summary>
-		public SearchMethod SearchMethod { get; set; }
+		SearchMethod SearchMethod { get; set; }
 
 		/// <summary>
 		/// Удалять найденные файлы.
 		/// Варианты: 0 или 1
 		/// По умолчанию: 0
 		/// </summary>
-		public bool DeleteFiles { get; set; }
+		bool DeleteFiles { get; set; }
 
 		/// <summary>
 		/// Режим тестирования, выполнение поиска разными методами N итераций.
 		/// Варианты: 0 или 1
 		/// По умолчанию: 0
 		/// </summary>
-		public bool TestMode { get; set; }
+		bool TestMode { get; set; }
 
 		/// <summary>
 		/// Флаг загрузки настроек.
 		/// </summary>
-		public bool Loaded { get; set; }
+		bool Loaded { get; set; }
 	}
 }

@@ -57,12 +57,12 @@
     <Compile Include="Extensions\ConcurrentBagExtensions.cs" />
     <Compile Include="Models\SearchMethod.cs" />
     <Compile Include="Models\SearchStartType.cs" />
-    <Compile Include="Models\Settings.cs" />
     <Compile Include="Services\Interfaces\ISearchEngine.cs" />
     <Compile Include="Services\Interfaces\ISearchHandler.cs" />
     <Compile Include="Ninject\Factory\ISearchFactory.cs" />
     <Compile Include="Ninject\SearchDaemonNinjectModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\Interfaces\ISearchSettings.cs" />
     <Compile Include="Services\SearchEngine.cs" />
     <Compile Include="Services\SearchHandler.cs" />
     <Compile Include="Services\SearchSettings.cs" />

@@ -11,40 +11,29 @@ namespace SearchDaemon.Core.Services
 {
 	public class SearchEngine : ISearchEngine
 	{
-		private readonly Settings _settings;
-
-		#region Constructors
-
-		public SearchEngine(Settings settings)
-		{
-			_settings = settings;
-		}
-
-		#endregion
-
 		/// <summary>
 		/// Производит поиск файлов в соответсвии с указанным в настрйках методом поиска.
 		/// </summary>
-		/// <param name="searchDirectory">Директория поиска.</param>
-		/// <param name="searchPatterns">Маски поиска.</param>
+		/// <param name="directory">Директория поиска.</param>
+		/// <param name="patterns">Маски поиска.</param>
 		/// <returns>Список найденных файлов.</returns>
-		public IEnumerable<string> Search(string searchDirectory, string[] searchPatterns)
+		public IEnumerable<string> Search(string directory, string[] patterns)
 		{
 			var found = new List<string>();
-			var searchMask = (string.Join("$|", searchPatterns) + "$")
+			var searchMask = (string.Join("$|", patterns) + "$")
 				.Replace(".", "[.]").Replace("*", ".*").Replace("?", ".");
 			var searchRegex = new Regex(searchMask, RegexOptions.IgnoreCase /*| RegexOptions.Compiled*/);
 
-			switch (_settings.SearchMethod)
+			switch (SearchSettings.SearchMethod)
 			{
 				case SearchMethod.DIRECTORY_ENUMERATE_FILES:
-					found.AddRange(GetFilesDotNet(searchDirectory, searchRegex));
+					found.AddRange(GetFilesDotNet(directory, searchRegex));
 					break;
 				case SearchMethod.FAST_FILE_INFO:
-					found.AddRange(GetFilesFastInfo(searchDirectory, searchRegex));
+					found.AddRange(GetFilesFastInfo(directory, searchRegex));
 					break;
 				case SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE:
-					found.AddRange(GetFilesFastInfoWithExclude(searchDirectory, searchRegex));
+					found.AddRange(GetFilesFastInfoWithExclude(directory, searchRegex));
 					break;
 				default:
 					throw new ArgumentException("Недопустимый метод поиска.");
@@ -71,7 +60,7 @@ namespace SearchDaemon.Core.Services
 						directoryInfo.EnumerateFiles("*.*", SearchOption.TopDirectoryOnly)
 							.Where(f => regex.IsMatch(f.Name) == true /*&& IsExcluded(f.DirectoryName) == false*/)
 							.Select(f => f.FullName));
-					if (_settings.SearchOption == SearchOption.AllDirectories)
+					if (SearchSettings.SearchOption == SearchOption.AllDirectories)
 					{
 						foreach (var dir in Directory.EnumerateDirectories(path))
 							files = files.Concat(GetFilesDotNet(dir, regex));
@@ -92,7 +81,7 @@ namespace SearchDaemon.Core.Services
 		/// <returns>Список найденных файлов.</returns>
 		private IEnumerable<string> GetFilesFastInfo(string path, Regex regex)
 		{
-			return FastFileInfo.EnumerateFiles(path, "*.*", _settings.SearchOption)
+			return FastFileInfo.EnumerateFiles(path, "*.*", SearchSettings.SearchOption)
 				.Where(f => regex.IsMatch(f.Name) == true && IsExcluded(f.DirectoryName) == false)
 				.Select(f => f.FullName);
 		}
@@ -115,7 +104,7 @@ namespace SearchDaemon.Core.Services
 						FastFileInfo.EnumerateFiles(path, "*.*", SearchOption.TopDirectoryOnly)
 							.Where(f => regex.IsMatch(f.Name) == true /*&& IsExcluded(f.DirectoryName) == false*/)
 							.Select(f => f.FullName));
-					if (_settings.SearchOption == SearchOption.AllDirectories)
+					if (SearchSettings.SearchOption == SearchOption.AllDirectories)
 					{
 						foreach (var dir in Directory.EnumerateDirectories(path))
 							files = files.Concat(GetFilesDotNet(dir, regex));
@@ -135,7 +124,7 @@ namespace SearchDaemon.Core.Services
 		/// <returns></returns>
 		private bool IsExcluded(string directory)
 		{
-			return _settings.ExcludeDirectory.Any(excluded => directory.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase));
+			return SearchSettings.ExcludeDirectory.Any(excluded => directory.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase));
 		}
 	}
 }

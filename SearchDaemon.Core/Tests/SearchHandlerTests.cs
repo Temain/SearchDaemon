@@ -3,18 +3,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using SearchDaemon.Core.Models;
+using SearchDaemon.Core.Services;
 using SearchDaemon.Core.Services.Interfaces;
 
 namespace SearchDaemon.Core.Tests
 {
 	public class SearchHandlerTests
 	{
-		private readonly Settings _settings;
 		private readonly ISearchEngine _searchEngine;
 
-		public SearchHandlerTests(ISearchEngine searchEngine, Settings settings)
+		public SearchHandlerTests(ISearchEngine searchEngine)
 		{
-			_settings = settings;
 			_searchEngine = searchEngine;
 		}
 
@@ -33,23 +32,23 @@ namespace SearchDaemon.Core.Tests
 			foreach (var method in methods)
 			{
 				output.Add("Метод: " + method);
-				_settings.SearchMethod = method;
+				SearchSettings.SearchMethod = method;
 
 				long total = 0;
 				for (var i = 0; i < iterations; i++)
 				{
 					stopwatch.Restart();
 
-					if (_settings.SearchParallel)
+					if (SearchSettings.SearchParallel)
 					{
-						_settings.SearchDirectory.AsParallel()
-							.SelectMany(directory => _searchEngine.Search(directory, _settings.SearchMask));
+						SearchSettings.SearchDirectory.AsParallel()
+							.SelectMany(directory => _searchEngine.Search(directory, SearchSettings.SearchMask));
 					}
 					else
 					{
-						foreach (var searchDirectory in _settings.SearchDirectory)
+						foreach (var searchDirectory in SearchSettings.SearchDirectory)
 						{
-							_searchEngine.Search(searchDirectory, _settings.SearchMask);
+							_searchEngine.Search(searchDirectory, SearchSettings.SearchMask);
 						}
 					}
 
@@ -61,7 +60,7 @@ namespace SearchDaemon.Core.Tests
 				output.Add("");
 			}
 
-			File.WriteAllLines(_settings.OutputFilePath, output);
+			File.WriteAllLines(SearchSettings.OutputFilePath, output);
 		}
 	}
 }

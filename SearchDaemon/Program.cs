@@ -14,6 +14,8 @@ namespace SearchDaemon
 		/// </summary>
 		static void Main()
 		{
+			Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
+
 			using (IKernel kernel = new StandardKernel(new SearchDaemonNinjectModule()))
 			{
 				var searchService = kernel.Get<SearchService>();
@@ -29,7 +31,6 @@ namespace SearchDaemon
 				}
 				else
 				{
-					Directory.SetCurrentDirectory(AppDomain.CurrentDomain.BaseDirectory);
 					ServiceBase.Run(searchService);
 				}
 			}

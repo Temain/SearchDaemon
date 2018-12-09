@@ -17,7 +17,6 @@ namespace SearchDaemon.Core.Services
 	public class SearchHandler : ISearchHandler
 	{
 		private readonly ISearchEngine _searchEngine;
-		private readonly Settings _settings;
 		private readonly EventLog _eventLog;
 
 		private System.Timers.Timer _timer;
@@ -25,12 +24,10 @@ namespace SearchDaemon.Core.Services
 
 		#region Constructors
 
-		public SearchHandler(ISearchEngine searchEngine, Settings settings
-			, EventLog eventLog)
+		public SearchHandler(ISearchEngine searchEngine, EventLog eventLog)
 		{
 			_searchEngine = searchEngine;
 			_eventLog = eventLog;
-			_settings = settings;
 		}
 
 		#endregion
@@ -40,7 +37,7 @@ namespace SearchDaemon.Core.Services
 		/// </summary>
 		public void Start()
 		{
-			if (_settings.SearchStartType == SearchStartType.Timer)
+			if (SearchSettings.SearchStartType == SearchStartType.Timer)
 			{
 				StartTimer();
 			}
@@ -55,7 +52,7 @@ namespace SearchDaemon.Core.Services
 		/// </summary>
 		public void Stop()
 		{
-			if (_settings.SearchStartType == SearchStartType.Timer)
+			if (SearchSettings.SearchStartType == SearchStartType.Timer)
 			{
 				StopTimer();
 			}
@@ -71,8 +68,7 @@ namespace SearchDaemon.Core.Services
 		/// </summary>
 		private void StartTimer()
 		{
-			var interval = _settings.TimerInterval;
-			_timer = new System.Timers.Timer(interval);
+			_timer = new System.Timers.Timer(SearchSettings.TimerInterval);
 			_timer.Elapsed += OnSearch;
 			_timer.AutoReset = false;
 
@@ -86,7 +82,7 @@ namespace SearchDaemon.Core.Services
 		private void StartCron()
 		{
 			_cronDaemon = new CronDaemon();
-			_cronDaemon.AddJob(_settings.Crontab, OnSearch);
+			_cronDaemon.AddJob(SearchSettings.Crontab, OnSearch);
 			_cronDaemon.Start();
 		}
 
@@ -113,9 +109,9 @@ namespace SearchDaemon.Core.Services
 		/// </summary>
 		private void OnSearch(object sender, ElapsedEventArgs e)
 		{
-			if (_settings.TestMode)
+			if (SearchSettings.TestMode)
 			{
-				new SearchHandlerTests(_searchEngine, _settings).RunAllMethods();
+				new SearchHandlerTests(_searchEngine).RunAllMethods();
 				return;
 			}
 
@@ -134,7 +130,7 @@ namespace SearchDaemon.Core.Services
 
 			if (searchResult != null)
 			{
-				File.WriteAllLines(_settings.OutputFilePath, searchResult);
+				File.WriteAllLines(SearchSettings.OutputFilePath, searchResult);
 			}
 
 			if (_timer != null) _timer.Start();
@@ -153,25 +149,25 @@ namespace SearchDaemon.Core.Services
 			var output = new List<string>();
 			var found = new ConcurrentBag<string>();
 			output.Add("Начало поиска: " + DateTime.Now);
-			output.Add("Шаблон поиска: " + string.Join(";", _settings.SearchMask));
-			output.Add("Директории: " + _settings.SearchDirectory);
+			output.Add("Шаблон поиска: " + string.Join(";", SearchSettings.SearchMask));
+			output.Add("Директории: " + SearchSettings.SearchDirectory);
 
-			if (_settings.SearchParallel)
+			if (SearchSettings.SearchParallel)
 			{
 				found.AddRange(
-					_settings.SearchDirectory.AsParallel()
-						.SelectMany(directory => _searchEngine.Search(directory, _settings.SearchMask)));
+					SearchSettings.SearchDirectory.AsParallel()
+						.SelectMany(directory => _searchEngine.Search(directory, SearchSettings.SearchMask)));
 			}
 			else
 			{
-				foreach (var searchDirectory in _settings.SearchDirectory)
+				foreach (var searchDirectory in SearchSettings.SearchDirectory)
 				{
 					found.AddRange(
-						_searchEngine.Search(searchDirectory, _settings.SearchMask));
+						_searchEngine.Search(searchDirectory, SearchSettings.SearchMask));
 				}
 			}
 
-			if (_settings.DeleteFiles) DeletedFiles(found);
+			if (SearchSettings.DeleteFiles) DeletedFiles(found);
 
 			output.AddRange(found);
 			output.Add("Найдено: " + found.Count() + " файлов");
