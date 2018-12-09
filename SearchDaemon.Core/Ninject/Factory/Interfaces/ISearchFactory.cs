@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using SearchDaemon.Core.Services.Interfaces;
 
-namespace SearchDaemon.Core.Ninject.Factory
+namespace SearchDaemon.Core.Ninject.Factory.Interfaces
 {
 	public interface ISearchFactory
 	{

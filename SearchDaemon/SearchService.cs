@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.ServiceProcess;
-using SearchDaemon.Core.Ninject.Factory;
+using SearchDaemon.Core.Ninject.Factory.Interfaces;
 using SearchDaemon.Core.Services;
 using SearchDaemon.Core.Services.Interfaces;
 
