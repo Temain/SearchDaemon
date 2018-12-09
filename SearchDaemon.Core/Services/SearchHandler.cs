@@ -10,7 +10,6 @@ using CronNET;
 using SearchDaemon.Core.Extensions;
 using SearchDaemon.Core.Models;
 using SearchDaemon.Core.Services.Interfaces;
-using SearchDaemon.Core.Tests;
 
 namespace SearchDaemon.Core.Services
 {
@@ -109,12 +108,6 @@ namespace SearchDaemon.Core.Services
 		/// </summary>
 		private void OnSearch(object sender, ElapsedEventArgs e)
 		{
-			if (SearchSettings.TestMode)
-			{
-				new SearchHandlerTests(_searchEngine).RunAllMethods();
-				return;
-			}
-
 			_eventLog.WriteEntry("Поиск файлов...", EventLogEntryType.Information);
 
 			List<string> searchResult = null;

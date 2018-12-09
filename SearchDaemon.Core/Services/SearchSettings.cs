@@ -41,7 +41,6 @@ namespace SearchDaemon.Core.Services
 		public static string OutputFilePath => _settings.OutputFilePath;
 		public static SearchMethod SearchMethod { get => _settings.SearchMethod; set { } }
 		public static bool DeleteFiles => _settings.DeleteFiles;
-		public static bool TestMode => _settings.TestMode;
 
 		public static bool Loaded { get; set; }
 	}

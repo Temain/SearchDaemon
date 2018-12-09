@@ -91,13 +91,6 @@ namespace SearchDaemon.Core.Services.Interfaces
 		bool DeleteFiles { get; set; }
 
 		/// <summary>
-		/// Режим тестирования, выполнение поиска разными методами N итераций.
-		/// Варианты: 0 или 1
-		/// По умолчанию: 0
-		/// </summary>
-		bool TestMode { get; set; }
-
-		/// <summary>
 		/// Флаг загрузки настроек.
 		/// </summary>
 		bool Loaded { get; set; }

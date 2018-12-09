@@ -1,56 +1,72 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Ninject;
+using SearchDaemon.Core.Extensions;
+using SearchDaemon.Core.Models;
+using SearchDaemon.Core.Ninject;
+using SearchDaemon.Core.Services;
 
 namespace SearchDaemon.Test
 {
 	[TestClass]
 	public class SearchEngineTest
 	{
+		[TestInitialize]
+		public void SearchEngineTestInitialize()
+		{
+			// var kernel = new StandardKernel(new SearchDaemonNinjectModule());
+		}
+
 		[TestMethod]
 		public void RunAllMethods()
 		{
+			var iterations = 1;
+			var output = new List<string>();
+			var methods = new List<SearchMethod>
+			{
+				SearchMethod.DIRECTORY_ENUMERATE_FILES,
+				SearchMethod.FAST_FILE_INFO,
+				SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE
+			};
 
-			//var iterations = 1;
-			//var output = new List<string>();
-			//var methods = new List<SearchMethod>
-			//{
-			//	SearchMethod.DIRECTORY_ENUMERATE_FILES,
-			//	SearchMethod.FAST_FILE_INFO,
-			//	SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE
-			//};
+			var stopwatch = new Stopwatch();
+			foreach (var method in methods)
+			{
+				output.Add("Метод: " + method);
+				SearchSettings.SearchMethod = method;
 
-			//var stopwatch = new Stopwatch();
-			//foreach (var method in methods)
-			//{
-			//	output.Add("Метод: " + method);
-			//	_settings.SearchMethod = method;
+				long total = 0;
+				for (var i = 0; i < iterations; i++)
+				{
+					stopwatch.Restart();
 
-			//	long total = 0;
-			//	for (var i = 0; i < iterations; i++)
-			//	{
-			//		stopwatch.Restart();
+					if (SearchSettings.SearchParallel)
+					{
+						SearchSettings.SearchDirectory.AsParallel()
+							.SelectMany(directory => new SearchEngine().Search(directory, SearchSettings.SearchMask))
+							.ToList();
+					}
+					else
+					{
+						foreach (var searchDirectory in SearchSettings.SearchDirectory)
+						{
+							new SearchEngine().Search(searchDirectory, SearchSettings.SearchMask);
+						}
+					}
 
-			//		if (_settings.SearchParallel)
-			//		{
-			//			_settings.SearchDirectory.AsParallel()
-			//				.SelectMany(directory => _searchEngine.Search(directory, _settings.SearchMask));
-			//		}
-			//		else
-			//		{
-			//			foreach (var searchDirectory in _settings.SearchDirectory)
-			//			{
-			//				_searchEngine.Search(searchDirectory, _settings.SearchMask);
-			//			}
-			//		}
+					var time = stopwatch.ElapsedMilliseconds;
+					output.Add("Итерация: " + (i + 1) + ", Время поиска: " + time);
+					total += time;
+				}
+				output.Add("Всего: " + total);
+				output.Add("");
+			}
 
-			//		var time = stopwatch.ElapsedMilliseconds;
-			//		output.Add("Итерация: " + (i + 1) + ", Время поиска: " + time);
-			//		total += time;
-			//	}
-			//	output.Add("Всего: " + total);
-			//	output.Add("");
-			//}
-
-			//File.WriteAllLines(_settings.OutputFilePath, output);
+			File.WriteAllLines(SearchSettings.OutputFilePath, output);
 		}
 	}
 }
