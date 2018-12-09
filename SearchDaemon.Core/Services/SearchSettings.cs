@@ -17,6 +17,8 @@ namespace SearchDaemon.Core.Services
 				.UseIniFile("SearchDaemon.ini")
 				.Build();
 
+			_settings.TimerInterval = _settings.TimerInterval * 60 * 1000;
+
 			var excludedDirectories = new List<string>();
 			foreach (var dir in ExcludeDirectory)
 			{
