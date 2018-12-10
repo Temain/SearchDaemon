@@ -1,4 +1,7 @@
-﻿namespace SearchDaemon
+﻿using System.ServiceProcess;
+using SearchDaemon.Core.Services;
+
+namespace SearchDaemon
 {
 	partial class ProjectInstaller
 	{
@@ -35,6 +38,7 @@
 			// 
 			this.searchDaemonProcessInstaller.Password = null;
 			this.searchDaemonProcessInstaller.Username = null;
+			this.searchDaemonProcessInstaller.Account = (ServiceAccount)SearchSettings.ServiceAccount;
 			// 
 			// searchDaemonInstaller
 			// 

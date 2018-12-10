@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Config.Net;
 using SearchDaemon.Core.Models;
 using SearchDaemon.Core.Services.Interfaces;
@@ -11,13 +12,17 @@ namespace SearchDaemon.Core.Services
 	{
 		private static readonly ISearchSettings _settings;
 
-		static SearchSettings()
+		static SearchSettings() 
 		{
-			var iniString = File.ReadAllText("SearchDaemon.ini");
+			var assembly = Assembly.GetExecutingAssembly();
+			var currentPath = assembly.Location.Replace(assembly.ManifestModule.Name, "");
+			var settingsPath = Path.Combine(currentPath, "SearchDaemon.ini");
+			var iniString = File.ReadAllText(settingsPath);
 			_settings = new ConfigurationBuilder<ISearchSettings>()
 				.UseIniString(iniString)
 				.Build();
 
+			ServiceAccount = _settings.ServiceAccount;
 			SearchStartType = _settings.SearchStartType;
 			TimerInterval = _settings.TimerInterval * 60 * 1000;
 			Crontab = _settings.Crontab;
@@ -40,6 +45,7 @@ namespace SearchDaemon.Core.Services
 			Loaded = true;
 		}
 
+		public static int ServiceAccount { get; set; }
 
 		public static SearchStartType SearchStartType { get; set; }
 

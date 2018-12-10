@@ -11,6 +11,16 @@ namespace SearchDaemon.Core.Services.Interfaces
 	public interface ISearchSettings
 	{
 		/// <summary>
+		/// Учетная запись под которой будет работать служба.
+		/// Варианты:
+		/// 0. LocalService
+		/// 1. NetworkService
+		/// 2. LocalSystem
+		/// 3. User
+		/// ПО умолчанию: 0
+		int ServiceAccount { get; set; }
+
+		/// <summary>
 		/// Тип запуска поиска:
 		/// - по таймеру
 		/// - по крону
