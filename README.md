@@ -6,7 +6,7 @@
 Target framework: .Net Framework 4
 
 Установка:
-1. Переместить файлы сервиса в подходящую директорию, например, C:\Program Files\SearchDaemon
+1. Переместить файлы сервиса в подходящую директорию. Например, C:\Program Files\SearchDaemon
 2. В файле SearchDaemon.ini установить значения настроек
 3. Запустить cmd от имени администратора и выполнить команды:
 	* cd C:\Windows\Microsoft.NET\Framework\v4.0.30319
