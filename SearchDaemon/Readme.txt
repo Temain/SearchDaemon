@@ -22,3 +22,4 @@ Target framework: .Net Framework 4.6.2
 2. InstallUtil.exe /u #{ServicePath}
 
 При изменении настроек в файле SearchDaemon.ini необходимо перезапустить сервис.
+Логгирование ведется в журнал событий Windows,  "Журналы Windows" => "Приложение".

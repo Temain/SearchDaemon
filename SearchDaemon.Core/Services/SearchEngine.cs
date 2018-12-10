@@ -36,9 +36,6 @@ namespace SearchDaemon.Core.Services
 					found.AddRange(GetFilesDotNet(directory, searchRegex));
 					break;
 				case SearchMethod.FAST_FILE_INFO:
-					found.AddRange(GetFilesFastInfo(directory, searchRegex));
-					break;
-				case SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE:
 					found.AddRange(GetFilesFastInfoWithExclude(directory, searchRegex));
 					break;
 				default:
@@ -130,7 +127,8 @@ namespace SearchDaemon.Core.Services
 		/// <returns></returns>
 		private bool IsExcluded(string directory)
 		{
-			return SearchSettings.ExcludeDirectory.Any(excluded => directory.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase));
+			var result = SearchSettings.ExcludeDirectory.Any(excluded => directory.StartsWith(excluded, StringComparison.InvariantCultureIgnoreCase));
+			return result;
 		}
 	}
 }

@@ -20,13 +20,12 @@ namespace SearchDaemon.Test
 		[TestMethod]
 		public void RunAllMethods()
 		{
-			var iterations = 4;
+			var iterations = 10;
 			var output = new List<string>();
 			var methods = new List<SearchMethod>
 			{
 				SearchMethod.DIRECTORY_ENUMERATE_FILES,
-				SearchMethod.FAST_FILE_INFO,
-				SearchMethod.FAST_FILE_INFO_WITH_EXCLUDE
+				SearchMethod.FAST_FILE_INFO
 			};
 
 			SearchSettings.SearchParallel = false;

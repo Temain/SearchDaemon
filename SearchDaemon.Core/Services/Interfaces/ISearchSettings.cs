@@ -77,8 +77,7 @@ namespace SearchDaemon.Core.Services.Interfaces
 		/// Метод поиска.
 		/// Варианты:
 		///	1. Стандартными средствами
-		///	2. Обертка над методами WinAPI(Версия #1)
-		///	3. Обертка над методами WinAPI (Версия #2)
+		///	2. Обертка над методами WinAPI
 		/// По умолчанию: 1
 		/// </summary>
 		SearchMethod SearchMethod { get; set; }
